@@ -93,13 +93,16 @@ function showGate(kind: "framed" | "unsupported") {
   app.style.display = "none";
   gate.style.display = "block";
   if (kind === "framed") {
-    const url = new URL(window.location.href);
     gate.innerHTML = `
       <h2>One more step!</h2>
-      <p>The micro:bit uploader needs its own browser tab.</p>
-      <a class="bigbtn" href="${url.toString()}" target="_blank" rel="noopener">
-        Open the micro:bit uploader ↗
-      </a>`;
+      <p>The micro:bit uploader needs its own browser tab.</p>`;
+    const link = document.createElement("a");
+    link.className = "bigbtn";
+    link.href = window.location.href;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = "Open the micro:bit uploader ↗";
+    gate.appendChild(link);
   } else {
     gate.innerHTML = `
       <h2>This browser can't talk to a micro:bit</h2>
