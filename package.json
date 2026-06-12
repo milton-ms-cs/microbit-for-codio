@@ -1,0 +1,19 @@
+{
+  "name": "microbit-for-codio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "micro:bit flasher and simulator pages for Codio assignments, served from a Codio stack",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "serve": "python3 -m http.server 8000 --directory dist"
+  },
+  "dependencies": {
+    "@microbit/microbit-connection": "1.0.0-beta.1",
+    "@microbit/microbit-fs": "0.10.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.5",
+    "typescript": "^5.5.4"
+  }
+}

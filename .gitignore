@@ -12,3 +12,7 @@ Thumbs.db
 
 # Don't ignore the hex firmware - we need it!
 # (explicitly keeping microbit-micropython-v2.hex)
+
+# Build
+node_modules/
+dist/
