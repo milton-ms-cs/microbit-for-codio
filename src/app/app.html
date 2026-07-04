@@ -62,9 +62,13 @@
         .simulator-frame {
             border: none;
             background-color: #fff;
+            display: block;
             width: 100%;
-            height: 420px;
-            margin-top: 10px;
+            max-width: 480px;
+            /* The board graphic's exact proportions (same as python.microbit.org)
+               — a fixed height clips it top and bottom. */
+            aspect-ratio: 191.27 / 155.77;
+            margin: 10px auto 0;
             border-radius: 6px;
         }
         .bigbtn, button#sendBtn {
@@ -165,6 +169,8 @@
                 class="simulator-frame"
                 title="micro:bit simulator"
                 src="https://python-simulator.usermbit.org/v/0.1/simulator.html"
+                scrolling="no"
+                allow="autoplay;microphone"
                 sandbox="allow-scripts allow-same-origin">
         </iframe>
         <div class="info" id="simInfo">Edit your code in Codio's editor, then click ▶ Run to test it here.</div>
