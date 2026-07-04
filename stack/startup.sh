@@ -42,4 +42,9 @@ if [ -f "$CODIO" ] && grep -q "micro:bit" "$CODIO" && [ -d "$SRC" ]; then
      && ! grep -q "microbit tools" "$WS/simulator.html"; then
     cp -f "$SRC/simulator.html" "$WS/simulator.html"
   fi
+elif [ -f "$DEST/VERSION" ]; then
+  # Self-heal: the pre-v1.1 (ungated) stack copied the tools into every box.
+  # This box's assignment isn't micro:bit, so remove the stale copy — but only
+  # a directory that is recognizably ours (has our VERSION marker).
+  rm -rf "$DEST"
 fi
