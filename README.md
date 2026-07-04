@@ -17,6 +17,13 @@ Since v1.1 there is a single combined page, built to **both** `flasher.html` and
   Works everywhere, including inside Codio's embedded preview frame. Opt-in
   "Run again when I come back to this tab" checkbox re-runs it with the latest
   code whenever the kid switches back from Codio.
+  **Sensor controls** under the board (buttons A/B are clickable on the board
+  itself): a 🤝 Shake button, press-and-hold touch buttons for pins 0/1/2 and
+  the logo, and a collapsed "More sensors" panel with sliders for light level,
+  temperature, sound level, compass heading, and 🧲 magnet strength (drives one
+  compass axis, so `compass.get_field_strength()` reads the slider value —
+  magnet-lockbox assignments work in the simulator). Slider ranges come from
+  the simulator's own state messages. Not exposed: radio and data logging.
 - **🔌 Send to a real micro:bit** — one-button WebUSB uploader. Connects
   (silently reusing a previously-chosen device), builds a MicroPython hex with
   the student's file, partial-flashes it, and shows kid-readable errors with
@@ -115,6 +122,7 @@ Manual hardware checklist before releasing:
 6. Empty `main.py` → refused with a friendly message (both Send and Download .hex).
 7. **⬇ Download .hex** → drag the file onto the MICROBIT drive → program runs.
 8. Simulator: ▶ Run works framed inside Codio AND popped out; auto-run checkbox re-runs on tab focus.
+9. Simulator sensors: 🤝 Shake triggers `was_gesture('shake')`; holding Pin 0 makes `pin0.is_touched()` True; the 🧲 slider moves `compass.get_field_strength()`.
 
 ## Releasing
 

@@ -152,6 +152,45 @@
             font-size: 0.85em;
         }
         .info { font-size: 13px; color: #666; margin-top: 8px; }
+        .sensor-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        .sensorbtn {
+            padding: 8px 14px;
+            font-size: 13px;
+            background-color: #e9ecef;
+            color: #222;
+        }
+        .sensorbtn:hover:not(:disabled) { background-color: #dde1e5; }
+        .pinbtn:active, .pinbtn.held {
+            background-color: #007bff;
+            color: white;
+        }
+        .more-sensors {
+            margin-top: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        .sensor-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+        .sensor-row label { flex: 0 0 170px; font-size: 13px; }
+        .sensor-row input[type="range"] { flex: 1; }
+        .sensor-row output {
+            flex: 0 0 70px;
+            font-family: monospace;
+            font-size: 13px;
+            text-align: right;
+        }
     </style>
 </head>
 <body>
@@ -173,6 +212,20 @@
                 allow="autoplay;microphone"
                 sandbox="allow-scripts allow-same-origin">
         </iframe>
+        <div id="sensorControls" style="display:none">
+            <div class="sensor-buttons">
+                <button id="shakeBtn" class="sensorbtn">🤝 Shake</button>
+                <button class="sensorbtn pinbtn" data-pin="pin0">👆 Pin 0</button>
+                <button class="sensorbtn pinbtn" data-pin="pin1">👆 Pin 1</button>
+                <button class="sensorbtn pinbtn" data-pin="pin2">👆 Pin 2</button>
+                <button class="sensorbtn pinbtn" data-pin="pinLogo">👆 Logo</button>
+                <span class="info" style="margin:0">(hold a pin button to touch it)</span>
+            </div>
+            <details class="more-sensors">
+                <summary>More sensors</summary>
+                <div id="sensorSliders"></div>
+            </details>
+        </div>
         <div class="info" id="simInfo">Edit your code in Codio's editor, then click ▶ Run to test it here.</div>
     </section>
 

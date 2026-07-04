@@ -58,6 +58,11 @@ const hexDownloadLink = el<HTMLAnchorElement>("hexDownloadLink");
 const hexDownloadBtn2 = el<HTMLButtonElement>("hexDownloadBtn2");
 const hexSteps = el<HTMLOListElement>("hexSteps");
 
+// Simulator sensor controls
+const sensorControls = el<HTMLDivElement>("sensorControls");
+const shakeBtn = el<HTMLButtonElement>("shakeBtn");
+const sensorSliders = el<HTMLDivElement>("sensorSliders");
+
 // Shared
 const output = el<HTMLPreElement>("output");
 const filenameSpan = el<HTMLSpanElement>("filename");
@@ -74,6 +79,20 @@ let crashShown = false;
 let lastFlashedCode: string | undefined;
 let simulatorReady = false;
 let lastAutoRunAt = 0;
+
+/**
+ * Sensor definitions from the simulator's own "ready"/"state_change" messages
+ * (kept up to date so slider ranges come from the sim, not from us).
+ */
+interface SimRangeSensor {
+  type: "range";
+  id: string;
+  value: number;
+  min: number;
+  max: number;
+}
+let simSensorState: Record<string, SimRangeSensor> = {};
+let slidersBuilt = false;
 
 // ---------------------------------------------------------------------------
 // Shared output log: simulator serial and device serial, one place, prefixed.
@@ -427,6 +446,121 @@ function resetSimulator() {
   logOutput("page", "Simulator reset");
 }
 
+// ---------------------------------------------------------------------------
+// Sensor controls: what the side panel does on python.microbit.org, sized for
+// middle school. The board handles its own buttons A/B; everything else is a
+// {kind:"set_value", id, value} message into the iframe. Slider ranges come
+// from the simulator's ready/state_change messages, not from us.
+// ---------------------------------------------------------------------------
+function setSensorValue(id: string, value: number | string) {
+  postToSimulator({ kind: "set_value", id, value });
+}
+
+/** Sliders: kid label, which sim sensor(s) a value drives, how to show it. */
+const SLIDER_SPECS: {
+  label: string;
+  /** Sensor whose min/max/value defines the slider's range and position. */
+  sensor: string;
+  /** All sensors set to the slider's value (magnet drives one compass axis). */
+  sets: string[];
+  format: (value: number) => string;
+}[] = [
+  { label: "💡 Light level", sensor: "lightLevel", sets: ["lightLevel"], format: (v) => `${v}` },
+  { label: "🌡 Temperature", sensor: "temperature", sets: ["temperature"], format: (v) => `${v}°C` },
+  { label: "🔊 Sound level", sensor: "soundLevel", sets: ["soundLevel"], format: (v) => `${v}` },
+  { label: "🧭 Compass heading", sensor: "compassHeading", sets: ["compassHeading"], format: (v) => `${v}°` },
+  // compass.get_field_strength() is √(x²+y²+z²); driving just the Z axis
+  // makes this slider read directly as field strength (the magnet-lockbox
+  // trick). Shown in µT to keep the numbers small; code sees nanotesla.
+  { label: "🧲 Magnet strength", sensor: "compassZ", sets: ["compassZ"], format: (v) => `${Math.round(v / 1000)} µT` },
+];
+
+function updateSensorState(sensors: Record<string, unknown>) {
+  for (const [id, sensor] of Object.entries(sensors)) {
+    if (sensor && typeof sensor === "object" && (sensor as SimRangeSensor).type === "range") {
+      simSensorState[id] = sensor as SimRangeSensor;
+    }
+  }
+  if (!slidersBuilt && SLIDER_SPECS.every((s) => simSensorState[s.sensor])) {
+    buildSliders();
+    slidersBuilt = true;
+  }
+  sensorControls.style.display = "block";
+  // Keep slider positions in sync when the sim resets its state.
+  for (const spec of SLIDER_SPECS) {
+    if (spec.sensor in sensors) {
+      const input = sensorSliders.querySelector<HTMLInputElement>(`input[data-sensor="${spec.sensor}"]`);
+      const valueOut = sensorSliders.querySelector<HTMLOutputElement>(`output[data-sensor="${spec.sensor}"]`);
+      if (input && valueOut && document.activeElement !== input) {
+        input.value = String(simSensorState[spec.sensor].value);
+        valueOut.textContent = spec.format(simSensorState[spec.sensor].value);
+      }
+    }
+  }
+}
+
+function buildSliders() {
+  for (const spec of SLIDER_SPECS) {
+    const sensor = simSensorState[spec.sensor];
+    // The magnet slider only pushes (positive Z), so field strength == value.
+    const min = spec.sensor === "compassZ" ? 0 : sensor.min;
+
+    const row = document.createElement("div");
+    row.className = "sensor-row";
+
+    const label = document.createElement("label");
+    label.textContent = spec.label;
+
+    const input = document.createElement("input");
+    input.type = "range";
+    input.min = String(min);
+    input.max = String(sensor.max);
+    input.step = String(Math.max(1, Math.round((sensor.max - min) / 100)));
+    input.value = String(Math.min(Math.max(sensor.value, min), sensor.max));
+    input.dataset.sensor = spec.sensor;
+    const inputId = `sensor-${spec.sensor}`;
+    input.id = inputId;
+    label.htmlFor = inputId;
+
+    const valueOut = document.createElement("output");
+    valueOut.dataset.sensor = spec.sensor;
+    valueOut.textContent = spec.format(Number(input.value));
+
+    input.addEventListener("input", () => {
+      const value = Number(input.value);
+      valueOut.textContent = spec.format(value);
+      for (const id of spec.sets) {
+        setSensorValue(id, value);
+      }
+    });
+
+    row.append(label, input, valueOut);
+    sensorSliders.appendChild(row);
+  }
+}
+
+function setUpSensorButtons() {
+  shakeBtn.addEventListener("click", () => {
+    setSensorValue("gesture", "shake");
+    logOutput("page", "🤝 Shake!");
+  });
+  for (const btn of document.querySelectorAll<HTMLButtonElement>(".pinbtn")) {
+    const pin = btn.dataset.pin!;
+    const press = () => {
+      btn.classList.add("held");
+      setSensorValue(pin, 1);
+    };
+    const release = () => {
+      btn.classList.remove("held");
+      setSensorValue(pin, 0);
+    };
+    btn.addEventListener("pointerdown", press);
+    btn.addEventListener("pointerup", release);
+    btn.addEventListener("pointercancel", release);
+    btn.addEventListener("pointerleave", release);
+  }
+}
+
 window.addEventListener("message", (event) => {
   if (event.origin !== SIMULATOR_ORIGIN) return;
   const message = event.data;
@@ -434,6 +568,7 @@ window.addEventListener("message", (event) => {
     case "ready":
       simulatorReady = true;
       updateSimulatorUI();
+      updateSensorState(message.state ?? {});
       logOutput("page", "✓ Simulator ready");
       break;
     case "request_flash":
@@ -444,17 +579,13 @@ window.addEventListener("message", (event) => {
       logOutput("sim", message.data);
       break;
     case "state_change":
-      if (message.data === "running") {
-        logOutput("sim", "▶ Running…");
-      } else if (message.data === "stopped") {
-        logOutput("sim", "⏹ Stopped");
-      }
+      updateSensorState(message.change ?? {});
       break;
     case "internal_error":
-      logOutput("sim", `❌ Simulator error: ${message.data}`);
+      logOutput("sim", `❌ Simulator error: ${message.error ?? message.data}`);
       break;
     case "radio_output":
-      logOutput("sim", `[Radio] ${message.data}`);
+      logOutput("sim", `[Radio] ${new TextDecoder().decode(message.data).replace(/^\x01\x00\x01/, "")}`);
       break;
   }
 });
@@ -500,6 +631,7 @@ async function init() {
   runBtn.textContent = `▶ Run ${targetFilename ?? ""}`.trim();
 
   setUpAutoRun();
+  setUpSensorButtons();
   runBtn.addEventListener("click", () => void runInSimulator());
   stopBtn.addEventListener("click", stopSimulator);
   resetBtn.addEventListener("click", resetSimulator);
