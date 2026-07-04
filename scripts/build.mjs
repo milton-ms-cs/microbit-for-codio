@@ -1,7 +1,9 @@
 /**
- * Builds dist/: two fully self-contained HTML pages (JS bundled and inlined,
- * zero runtime network dependencies except the firmware hex next to them)
- * plus the versioned firmware hex and a VERSION marker.
+ * Builds dist/: one fully self-contained HTML page (JS bundled and inlined,
+ * zero runtime network dependencies except the firmware hex next to it and
+ * the pinned simulator iframe), written to BOTH dist/flasher.html and
+ * dist/simulator.html so existing guide links keep working, plus the
+ * versioned firmware hex and a VERSION marker.
  */
 import * as esbuild from "esbuild";
 import { execSync } from "node:child_process";
@@ -27,7 +29,7 @@ try {
 } catch {}
 const version = `v${pkg.version} (${sha})`;
 
-async function buildPage(name) {
+async function buildPage(name, outputNames) {
   const result = await esbuild.build({
     entryPoints: [join(root, `src/${name}/${name}.ts`)],
     bundle: true,
@@ -47,12 +49,15 @@ async function buildPage(name) {
     throw new Error(`${name}.html is missing the ${marker} marker`);
   }
   const out = html.replace(marker, () => js);
-  writeFileSync(join(dist, `${name}.html`), out);
-  console.log(`dist/${name}.html  ${(out.length / 1024).toFixed(0)} KB`);
+  for (const outputName of outputNames) {
+    writeFileSync(join(dist, `${outputName}.html`), out);
+    console.log(`dist/${outputName}.html  ${(out.length / 1024).toFixed(0)} KB`);
+  }
 }
 
-await buildPage("flasher");
-await buildPage("simulator");
+// The combined page ships under both historical names: guide links to either
+// flasher.html or simulator.html land on the same tool.
+await buildPage("app", ["flasher", "simulator"]);
 copyFileSync(join(root, "firmware", firmwareFilename), join(dist, firmwareFilename));
 writeFileSync(join(dist, "VERSION"), version + "\n");
 console.log(`dist/${firmwareFilename}`);

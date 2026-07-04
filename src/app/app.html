@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>micro:bit</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 16px 20px 24px;
+            color: #222;
+            background-color: #f5f5f5;
+        }
+        h1 { font-size: 22px; margin: 4px 0 12px; }
+        h2 { font-size: 17px; margin: 0 0 10px; }
+        section {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 14px 16px;
+            margin-bottom: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        button:hover:not(:disabled) { background-color: #0056b3; }
+        button:disabled { background-color: #9bbfe3; cursor: not-allowed; }
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .chip {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .chip.ready { background-color: #d4edda; color: #155724; }
+        .chip.loading { background-color: #fff3cd; color: #856404; }
+        .chip.error { background-color: #f8d7da; color: #721c24; }
+        .autorun {
+            font-size: 13px;
+            color: #444;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: auto;
+            cursor: pointer;
+        }
+        .simulator-frame {
+            border: none;
+            background-color: #fff;
+            width: 100%;
+            height: 420px;
+            margin-top: 10px;
+            border-radius: 6px;
+        }
+        .bigbtn, button#sendBtn {
+            display: inline-block;
+            padding: 14px 32px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+        }
+        .bigbtn:hover, button#sendBtn:hover:not(:disabled) { background-color: #0056b3; }
+        button#sendBtn:disabled { background-color: #9bbfe3; cursor: wait; }
+        #status {
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background-color: #f1f3f5;
+            font-size: 15px;
+        }
+        #status.error { background-color: #f8d7da; color: #721c24; }
+        #status.success { background-color: #d4edda; color: #155724; }
+        #status.info { background-color: #d1ecf1; color: #0c5460; }
+        #steps {
+            display: none;
+            margin: 8px 0 0;
+            padding: 10px 16px 10px 36px;
+            background-color: #fff3cd;
+            border-radius: 8px;
+            color: #5c4602;
+            font-size: 14px;
+        }
+        #steps li { margin: 5px 0; }
+        #progress { width: 100%; height: 22px; margin-top: 10px; display: none; }
+        #pickerHelp { display: none; margin-top: 12px; text-align: center; }
+        #pickerHelp svg { max-width: 340px; width: 100%; height: auto; }
+        #pickerHelp figcaption { font-size: 13px; color: #555; margin-top: 4px; }
+        .hexfallback { font-size: 13px; margin: 12px 0 0; }
+        .hexfallback a { color: #0056b3; }
+        #hexSteps {
+            display: none;
+            margin-top: 8px;
+            padding: 10px 16px 10px 36px;
+            background-color: #d1ecf1;
+            border-radius: 8px;
+            color: #0c5460;
+            font-size: 14px;
+        }
+        #hexSteps li { margin: 5px 0; }
+        #output {
+            max-height: 200px;
+            min-height: 60px;
+            margin: 0;
+            padding: 10px;
+            background: #212529;
+            color: #e9ecef;
+            border-radius: 6px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        details.trouble {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            background: white;
+        }
+        summary { cursor: pointer; font-weight: 600; }
+        .meta { margin-top: 16px; font-size: 12px; color: #adb5bd; text-align: center; }
+        .filebadge {
+            font-family: monospace;
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+        .info { font-size: 13px; color: #666; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <h1>micro:bit — <span id="filename" class="filebadge">main.py</span></h1>
+
+    <section id="simSection">
+        <div class="controls">
+            <button id="runBtn" disabled>▶ Run</button>
+            <button id="stopBtn" disabled>⏹ Stop</button>
+            <button id="resetBtn" disabled>🔄 Reset</button>
+            <span id="simStatus" class="chip loading">Loading Simulator…</span>
+            <label class="autorun"><input type="checkbox" id="autoRun">Run again when I come back to this tab</label>
+        </div>
+        <iframe id="simulator"
+                class="simulator-frame"
+                title="micro:bit simulator"
+                src="https://python-simulator.usermbit.org/v/0.1/simulator.html"
+                sandbox="allow-scripts allow-same-origin">
+        </iframe>
+        <div class="info" id="simInfo">Edit your code in Codio's editor, then click ▶ Run to test it here.</div>
+    </section>
+
+    <section id="flashSection">
+        <h2>🔌 Send to a real micro:bit</h2>
+
+        <div id="flashFramed" style="display:none">
+            <p>Sending to a real micro:bit needs its own browser tab (the simulator above works right here).</p>
+            <a id="popoutLink" class="bigbtn" target="_blank" rel="noopener">Open in its own tab ↗</a>
+        </div>
+
+        <div id="flashUnsupported" style="display:none">
+            <p><strong>This browser can't talk to a micro:bit directly.</strong>
+               Google Chrome or Microsoft Edge on a computer can. You can still get your
+               program onto the micro:bit by downloading it:</p>
+            <button id="hexDownloadBtn2">⬇ Download .hex file</button>
+        </div>
+
+        <div id="flashLive" style="display:none">
+            <button id="sendBtn">▶ Send to micro:bit</button>
+            <progress id="progress" value="0" max="100"></progress>
+            <div id="pickerHelp">
+                <figure style="margin:0">
+                    <svg viewBox="0 0 340 200" role="img" aria-label="Browser popup: choose BBC micro:bit, then click Connect">
+                        <rect x="1" y="1" width="338" height="198" rx="10" fill="#fff" stroke="#c4c9d0"/>
+                        <text x="20" y="30" font-size="13" fill="#333" font-family="sans-serif">This site wants to connect to a device</text>
+                        <rect x="16" y="46" width="308" height="34" rx="6" fill="#dbe9ff" stroke="#4d90fe"/>
+                        <circle cx="34" cy="63" r="7" fill="#4d90fe"/>
+                        <text x="52" y="68" font-size="13" fill="#1a1a1a" font-family="sans-serif" font-weight="bold">"BBC micro:bit CMSIS-DAP"  ← click this</text>
+                        <rect x="16" y="88" width="308" height="30" rx="6" fill="#f3f4f6"/>
+                        <text x="52" y="108" font-size="12" fill="#9aa0a6" font-family="sans-serif">(other devices…)</text>
+                        <rect x="212" y="146" width="52" height="30" rx="6" fill="#e9ecef"/>
+                        <text x="222" y="166" font-size="12" fill="#555" font-family="sans-serif">Cancel</text>
+                        <rect x="272" y="146" width="56" height="30" rx="6" fill="#1a73e8"/>
+                        <text x="280" y="166" font-size="12" fill="#fff" font-family="sans-serif" font-weight="bold">Connect</text>
+                    </svg>
+                    <figcaption>A popup like this appears near the top of your browser.</figcaption>
+                </figure>
+            </div>
+            <div id="status" aria-live="polite">Loading…</div>
+            <ol id="steps"></ol>
+            <p class="hexfallback">Can't connect? <a href="#" id="hexDownloadLink">Download a .hex file instead</a></p>
+        </div>
+
+        <ol id="hexSteps"></ol>
+    </section>
+
+    <section>
+        <h2>Messages from your program</h2>
+        <pre id="output"></pre>
+    </section>
+
+    <details class="trouble">
+        <summary>Having trouble?</summary>
+        <ul>
+            <li>Make sure the micro:bit is plugged in with a <strong>data</strong> USB cable (some cables only charge).</li>
+            <li>Close other micro:bit websites (MakeCode, python.microbit.org) — only one tab can use it at a time.</li>
+            <li>When the picker pops up, choose <strong>“BBC micro:bit”</strong> and click <strong>Connect</strong>.</li>
+            <li>If nothing works: unplug the micro:bit, plug it back in, reload this page, and try again.</li>
+        </ul>
+    </details>
+
+    <p class="meta">micro:bit tools <span id="version"></span> · sending needs Chrome or Edge</p>
+
+    <script>/*__BUNDLE__*/</script>
+</body>
+</html>

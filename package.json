@@ -1,8 +1,8 @@
 {
   "name": "microbit-for-codio",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "micro:bit flasher and simulator pages for Codio assignments, served from a Codio stack",
+  "description": "Combined micro:bit simulator + flasher page for Codio assignments, served from a Codio stack",
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",

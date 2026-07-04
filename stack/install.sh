@@ -4,9 +4,9 @@
 # Run this ONCE in a Codio box that you are about to snapshot as a stack
 # (Project ▸ Stack ▸ Create New / Add Version):
 #
-#   curl -fsSL https://raw.githubusercontent.com/bsitkoff/microbit_for_codio/main/stack/install.sh | sudo bash -s v1.0.0
+#   curl -fsSL https://raw.githubusercontent.com/milton-ms-cs/microbit-for-codio/main/stack/install.sh | sudo bash -s v1.1.0
 #
-# or, from a checkout:  sudo stack/install.sh v1.0.0
+# or, from a checkout:  sudo stack/install.sh v1.1.0
 #
 # It downloads the pinned release of the built tools into /opt/microbit-tools
 # and installs /home/codio/startup.sh so every box created from the stack
@@ -15,7 +15,7 @@
 set -euo pipefail
 
 TAG="${1:?Usage: install.sh <release-tag, e.g. v1.0.0>}"
-REPO="bsitkoff/microbit_for_codio"
+REPO="milton-ms-cs/microbit-for-codio"
 URL="https://github.com/${REPO}/releases/download/${TAG}/microbit-tools-${TAG}.tar.gz"
 
 echo "Installing micro:bit tools ${TAG} from ${URL}"
